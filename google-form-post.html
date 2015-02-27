@@ -1,0 +1,107 @@
+<!--
+  Author: Sengkim
+  Date: Feb 18th, 2015
+  Discription: Unauthenticated user access. 
+  -->
+<!doctype html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>AJax submit form to Spread sheet</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-XXXXX-1', 'auto');
+  ga('send', 'pageview', {
+  'page': '/my-new-page',
+  'hitCallback': function() {
+    alert('analytics.js done sending data');
+  }
+});
+
+</script>
+
+</head>
+<body>
+
+<!-- <iframe src="https://docs.google.com/forms/d/1YfpkDLSeBFpZi91ET1T5mbch2EtjTpQOTtAIwPlU8-o/viewform?embedded=true" width="760" height="500" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe> -->
+	
+<div id="form" class="contact-us-form">
+    <div class="title">
+        <strong>Have any questions?</strong>
+    </div>
+ 
+    <form id="callus" target="_self" onsubmit="" action="javascript: postContactToGoogle()">
+		<table>
+			<tr>
+	            <td><label for="where">Where was it happen? *</label></td>
+	            <td><input id="where" type="text" name="where"> <br></td>
+			</tr>
+			<tr>
+	            <td><label for="what">what kind of violence? *</label></td>
+	            <td><input id="what" type="text" name="what"> <br></td>
+			</tr>
+			<tr>
+	            <td><label for="when">when was it happen?*</label></td>
+	            <td><input id="when" type="text" name="when"><br></td>
+			</tr>
+			<tr>
+	            <td><label for="sex">Sex?*</label></td>
+	            <td><input id="sex" type="text" name="sex"><br></td>
+			</tr>
+		</table>
+
+        <div style="width: 100%; display: block; float: right;">
+            <button id="send" type="submit">
+                Submit
+            </button>
+        </div>
+        <div style="width: 100%; display: block; float: right; padding-top: 15px;">
+            <div class="requestSubmited" style="display:none; text-align: center;">Your request has been sent!</div>
+        </div>
+    </form>
+</div>
+ 
+<script type="text/javascript">
+
+    function postContactToGoogle(){
+        var where = $('#where').val();
+        var what = $('#what').val();
+        var when = $('#when').val();
+		var sex = $('#sex').val();
+
+        if ((where !== "") && (what !== "") && (when !== "") && (sex !== "")) {
+            $.ajax({
+                url: "https://docs.google.com/forms/d/formid/formResponse",
+                data: {"entry.1104776376" : when, "entry.1940729435" : sex, "entry.309315583": what, "entry.884233454": where, 
+							"draftResponse": [,,"-6869524527867578368"], "fbzx": "-6869524527867578368", "pageHistory": 0},
+                type: "POST",
+                dataType: "xml",
+                statusCode: {
+                    0: function (){
+ 
+                        $('#where').val("");
+                        $('#what').val("");
+                        $('#when').val("");
+						$('#sex').val("");
+						alert("Success!!");
+                        //Success message
+                    },
+                    200: function (){
+
+                    }
+                }
+            });
+        }
+        else {
+            //Error message
+        }
+    }
+</script>
+</body>
+</html>

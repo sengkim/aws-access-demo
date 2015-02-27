@@ -1,0 +1,87 @@
+<!--
+  Author: Sengkim
+  Date: Feb 18th, 2015
+  Discription: Unauthenticated user access. 
+  -->
+<!doctype html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Javascript upload to S3 demo</title>
+	<script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.9.min.js"></script>
+	<script type="text/javascript">
+
+		// The parameters required to intialize the Cognito Credentials object.
+		var params = {
+		    AccountId: "07XXXXX",
+		    RoleArn: "arn:aws:iam::07XXXXX:role/Cognito_AmazonCognitoFullAccessMovilletestUnauth_DefaultRole",
+		    IdentityPoolId: "eu-west-1:d63e17c9-de8a-4426-b5a0-XXXXXXXXX"
+		};
+	 
+		// set the Amazon Cognito region
+		AWS.config.region = 'eu-west-1';
+
+		// initialize the Credentials object with our parameters
+		var creds = new AWS.CognitoIdentityCredentials(params);
+		AWS.config.credentials = creds;
+		 
+		// We can set the get method of the Credentials object to retrieve
+		// the unique identifier for the end user (identityId) once the provider
+		// has refreshed itself
+
+		AWS.config.credentials.get(function(err) {
+		    if (!err) {
+		        console.log("Cognito Identity Id: " + AWS.config.credentials.identityId);
+		    } else {
+		    	console.log(JSON.stringify(err));
+		    }
+		});
+		
+	</script>
+	<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-XXXXXX-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</head>
+<body>
+
+	
+	<div id="status"></div>
+	<ul id="objects"></ul>
+
+	<script type="text/javascript">
+
+	  AWS.config.region = 'ap-southeast-1';
+	  var bucket = new AWS.S3({params: {Bucket: 'gg-moville-test'}});
+	  
+
+	  bucket.getObject({Bucket: 'gg-moville-test'});
+	  bucket.listObjects(function (err, data) {
+	    if (err) {
+	      document.getElementById('status').innerHTML =
+	        'Could not load objects from S3';
+	        console.log(JSON.stringify(err));
+	    } else {
+	      document.getElementById('status').innerHTML =
+	        'Loaded ' + data.Contents.length + ' items from S3';
+	      for (var i = 0; i < data.Contents.length; i++) {
+	        document.getElementById('objects').innerHTML +=
+	          '<li>' + data.Contents[i].Key + '</li>';
+	      }
+	    }
+	  });
+
+	  	var db = new AWS.DynamoDB();
+		db.listTables(function(err, data) {
+		  console.log(data.TableNames);
+		});
+	</script> 
+    
+</body>
+</html>

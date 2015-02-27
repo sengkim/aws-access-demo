@@ -1,0 +1,87 @@
+<!--
+  Author: Sengkim
+  Date: Feb 18th, 2015
+  Discription: Web Identity Federation on Facebook. 
+  -->
+<!doctype html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Javascript upload to S3 demo</title>
+	<script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.9.min.js"></script>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-XXXXXX-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</head>
+<body>
+
+	<button id="login">Login</button>
+	<div id="fb-root"></div>
+	<div id="status"></div>
+	<ul id="objects"></ul>
+  
+<script type="text/javascript">
+var s3 = null;
+var appId = 'XXXXXXX'; // Facebook app ID
+var roleArn = 'arn:aws:iam::XXXXXX:role/WebFederation';
+
+window.fbAsyncInit = function() {
+  // init the FB JS SDK
+  FB.init({appId: appId});
+
+  document.getElementById('login').onclick = function() {
+    FB.login(function (response) {
+      if (response.authResponse) { // logged in
+        AWS.config.credentials = new AWS.WebIdentityCredentials({
+        	RoleArn: roleArn,
+        	IdentityPoolId: "eu-west-1:d63e17c9-de8a-4426-b5a0-XXXXXXX",
+        	ProviderId: 'graph.facebook.com',
+          WebIdentityToken: response.authResponse.accessToken
+        });
+
+        s3 = new AWS.S3;
+        console.log('You are now logged in.');
+
+        var bucket = new AWS.S3({params: {Bucket: 'gg-moville-test'}});
+  	  	bucket.listObjects(function (err, data) {
+  	    if (err) {
+  	      document.getElementById('status').innerHTML =
+  	        'Could not load objects from S3' + err + err.stack;
+  	        console.log(JSON.stringify(err));
+  	        console.log(err.stack);
+  	    } else {
+  	      document.getElementById('status').innerHTML =
+  	        'Loaded ' + data.Contents.length + ' items from S3';
+  	      for (var i = 0; i < data.Contents.length; i++) {
+  	        document.getElementById('objects').innerHTML +=
+  	          '<li>' + data.Contents[i].Key + '</li>';
+  	      }
+  	    }
+  	  });
+        
+      } else {
+        console.log('There was a problem logging you in.');
+      }
+    });
+  };
+};
+
+// Load the FB JS SDK asynchronously
+(function(d, s, id){
+   var js, fjs = d.getElementsByTagName(s)[0];
+   if (d.getElementById(id)) {return;}
+   js = d.createElement(s); js.id = id;
+   js.src = "//connect.facebook.net/en_US/all.js";
+   fjs.parentNode.insertBefore(js, fjs);
+ }(document, 'script', 'facebook-jssdk'));
+</script>
+    
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!--
+  Author: Sengkim
+  Date: Feb 18th, 2015
+  Discription: Export From DynamoDb to Excel 
+  -->
+<!doctype html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Javascript export DynamoDB data to Excel</title>
+	<script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.9.min.js"></script>
+
+	<script type="text/javascript" src="js/xlsx.core.min.js"></script>
+	<script type="text/javascript" src="js/Blob.js"></script>
+	<script type="text/javascript" src="js/FileSaver.js"></script>
+
+	<script type="text/javascript">
+
+		// The parameters required to intialize the Cognito Credentials object.
+		var params = {
+		    AccountId: "XXXXXXX",
+		    RoleArn: "arn:aws:iam::XXXXX:role/Cognito_AmazonCognitoFullAccessMovilletestUnauth_DefaultRole",
+		    IdentityPoolId: "eu-west-1:d63e17c9-de8a-4426-b5a0-XXXX"
+		};
+
+		// set the Amazon Cognito region
+		AWS.config.region = 'eu-west-1';
+
+		// initialize the Credentials object with our parameters
+		var creds = new AWS.CognitoIdentityCredentials(params);
+		AWS.config.credentials = creds;
+		 
+		// We can set the get method of the Credentials object to retrieve
+		// the unique identifier for the end user (identityId) once the provider
+		// has refreshed itself
+		AWS.config.credentials.get(function(err) {
+		    if (!err) {
+		        console.log("Cognito Identity Id: " + AWS.config.credentials.identityId);
+		    } else {
+		    	console.log(JSON.stringify(err));
+		    }
+		});
+	</script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-XXXXX-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+	
+</head>
+<body> 
+	
+	<input type="file" id="file-chooser" /> 
+	<button id="upload-button">Upload to S3</button>
+	<br>
+	<button id="export-button">Export to Excel</button>
+	<div id="results"></div>
+	<div id="status"></div>
+	<ul id="objects"></ul>
+
+	<script type="text/javascript">
+
+		var exportButton = document.getElementById('export-button');
+		
+		exportButton.addEventListener('click', function() {
+			dynamoDBToExcel();
+		});
+
+		function dynamoDBToExcel() {
+			AWS.config.region = 'ap-southeast-1';
+			var table = new AWS.DynamoDB({params: {TableName: 'moville-test'}});
+			var data = [];
+
+			var params = {
+				"TableName": "moville-test",
+				"Limit": 100,
+			}
+
+			table.scan(params, function(err, rdata) {
+				if(err) {
+					console.log(err, err.stack);
+				} else {
+					console.log(JSON.stringify(rdata.Items));
+					data = json2array(rdata.Items);
+					generateToExcel(data);
+				}
+			});
+		}
+		
+
+		function json2array(json){
+		    var result = [];
+		    var temp = [];
+		    for(var i in json) {
+			    var keys = Object.keys(json[i]);
+			    if(i == 0) {
+			    	result.push(keys);
+			    }
+			    keys.forEach(function(key){
+			    	var items = Object.keys(json[i][key]);
+			    	items.forEach(function(item) {
+			    		temp.push(json[i][key][item]);	
+			    	})
+			    });
+			    result.push(temp);
+			    temp = [];
+		    }
+		    console.log(result);
+		    return result;
+		}
+
+	
+
+		function datenum(v, date1904) {
+			if(date1904) v+=1462;
+			var epoch = Date.parse(v);
+			return (epoch - new Date(Date.UTC(1899, 11, 30))) / (24 * 60 * 60 * 1000);
+		}
+		 
+		function sheet_from_array_of_arrays(data, opts) {
+			var ws = {};
+			var range = {s: {c:10000000, r:10000000}, e: {c:0, r:0 }};
+			for(var R = 0; R != data.length; ++R) {
+				for(var C = 0; C != data[R].length; ++C) {
+					if(range.s.r > R) range.s.r = R;
+					if(range.s.c > C) range.s.c = C;
+					if(range.e.r < R) range.e.r = R;
+					if(range.e.c < C) range.e.c = C;
+					var cell = {v: data[R][C] };
+					if(cell.v == null) continue;
+					var cell_ref = XLSX.utils.encode_cell({c:C,r:R});
+					
+					if(typeof cell.v === 'number') cell.t = 'n';
+					else if(typeof cell.v === 'boolean') cell.t = 'b';
+					else if(cell.v instanceof Date) {
+						cell.t = 'n'; cell.z = XLSX.SSF._table[14];
+						cell.v = datenum(cell.v);
+					}
+					else cell.t = 's';
+					
+					ws[cell_ref] = cell;
+				}
+			}
+			if(range.s.c < 10000000) ws['!ref'] = XLSX.utils.encode_range(range);
+			return ws;
+		}
+		 
+		function Workbook() {
+			if(!(this instanceof Workbook)) return new Workbook();
+			this.SheetNames = [];
+			this.Sheets = {};
+		}
+
+		function s2ab(s) {
+			var buf = new ArrayBuffer(s.length);
+			var view = new Uint8Array(buf);
+			for (var i=0; i!=s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+			return buf;
+		}
+
+		function generateToExcel(data) {
+			var ws_name = "Report";
+			console.log(data);
+			var wb = new Workbook(), ws = sheet_from_array_of_arrays(data);
+			 
+			/* add worksheet to workbook */
+			wb.SheetNames.push(ws_name);
+			wb.Sheets[ws_name] = ws;
+			var wbout = XLSX.write(wb, {bookType:'xlsx', bookSST:true, type: 'binary'});
+		
+			saveAs(new Blob([s2ab(wbout)],{type:"application/octet-stream"}), "test.xlsx");
+		}
+
+	</script> 
+    
+</body>
+</html>

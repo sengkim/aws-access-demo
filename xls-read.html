@@ -1,0 +1,96 @@
+<!--
+  Author: Sengkim
+  Date: Feb 18th, 2015
+  Discription: Read xls data to Json object. 
+  -->
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>JS-EXCEL Read Demo</title>
+<style>
+
+</style>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-XXXXXX-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</head>
+
+<body>
+
+<b>JS-EXCEL Read Demo</b><br />
+Output Format: JSON
+<br />
+<p><input type="file" name"xlfile" id="xlf" />
+<pre id="out"></pre>
+<br />
+
+<script src="./js/xls.js"></script>
+<script>
+
+var X = XLS;
+
+var wtf_mode = false;
+function fixdata(data) {
+	var o = "", l = 0, w = 10240;
+	for(; l<data.byteLength/w; ++l) o+=String.fromCharCode.apply(null,new Uint8Array(data.slice(l*w,l*w+w)));
+	o+=String.fromCharCode.apply(null, new Uint8Array(data.slice(l*w)));
+	return o;
+}
+
+function to_json(workbook) {
+    var result = {};
+    workbook.SheetNames.forEach(function(sheetName) {
+        var roa = X.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+	    var jsonValue = X.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        if(roa.length > 0) {
+            result = roa;
+        }
+    });
+    
+    return result;
+}
+
+function process_wb(wb) {
+    var output = "";
+    output = JSON.stringify(to_json(wb), 2, 2);
+    var myObject = eval('(' + output + ')');
+    
+ //    for(var i in myObject) {
+	// alert(JSON.stringify(myObject[i], 2, 2));
+ //    }
+    // alert(myObject[0].Admin + " text to Json Object");
+    if(out.innerText === undefined) out.textContent = output;
+    else out.innerText = output;
+    return output;
+}
+
+var xlf = document.getElementById('xlf');
+function handleFile(e) {
+        var files = e.target.files;
+        var f = files[0];
+            var reader = new FileReader();
+            var name = f.name;
+            reader.onload = function(e) {
+
+                var data = e.target.result;
+                var wb;
+                var arr = fixdata(data);
+                wb = X.read(btoa(arr), {type: 'base64'});
+                process_wb(wb);
+            };
+            reader.readAsArrayBuffer(f);
+}
+
+if(xlf.addEventListener) xlf.addEventListener('change', handleFile, false);
+</script>
+</body>
+</html>
